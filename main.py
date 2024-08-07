@@ -1,4 +1,6 @@
 import cv2 as cv
+# from tqdm.notebook import tqdm # For Colab Users
+
 from age_recognition import age_gender_detector, getFaceBox
 
 faceProto = "Model Weights/opencv_face_detector.pbtxt"
@@ -19,11 +21,27 @@ ageNet = cv.dnn.readNet(ageModel, ageProto)
 genderNet = cv.dnn.readNet(genderModel, genderProto)
 faceNet = cv.dnn.readNet(faceModel, faceProto)
 
-image_path = ''
-image = cv.imread(image_path)
 
-# cv.imshow(image) # non-colab user 
+VIDEO_PATH = 'clip.mp4'
+vid = cv.VideoCapture(VIDEO_PATH)
 
-# colab user
-# from google.colab.patches import cv2_imshow 
-# cv2_imshow(output) 
+frame_width = int(vid.get(cv.CAP_PROP_FRAME_WIDTH))
+frame_height = int(vid.get(cv.CAP_PROP_FRAME_HEIGHT))
+fourcc = cv.VideoWriter_fourcc(*'XVID')
+out = cv.VideoWriter('processed_video.avi', fourcc, 20.0, (frame_width, frame_height))
+total_frames = int(vid.get(cv.CAP_PROP_FRAME_COUNT))  # Total number of frames
+# pbar = tqdm(total=total_frames) # colab users
+
+
+while vid.isOpened():
+    ret, frame = vid.read()
+      
+    if not ret:
+      break
+    detection_frame = age_gender_detector(frame)
+    out.write(detection_frame)
+    # pbar.update(1) # colab users
+
+vid.release()
+out.release()
+cv.destroyAllWindows()
